@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1080" role="img" aria-labelledby="title desc">
+  <title id="title">ERD APART-CARE</title>
+  <desc id="desc">Diagram hubungan entitas sistem pengaduan dan perawatan fasilitas apartemen.</desc>
+  <defs>
+    <style>@font-face{font-family:Jakarta;src:url('../fonts/plus-jakarta-sans-latin.woff2')}text{font-family:Jakarta,Arial,sans-serif;fill:#17211f}.box{fill:#fffdf8;stroke:#b9b7af;stroke-width:2}.core{fill:#e4f2eb;stroke:#0b6b53;stroke-width:3}.head{font-size:20px;font-weight:800}.field{font-size:13px;fill:#52605d}.rel{fill:none;stroke:#52605d;stroke-width:2;marker-end:url(#arrow)}.dashed{stroke-dasharray:8 6}.label{font-size:12px;font-weight:700;fill:#0b6b53}</style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0L9 3 0 6z" fill="#52605d"/></marker>
+  </defs>
+  <rect width="1600" height="1080" fill="#f3f1ea"/>
+  <text x="60" y="60" font-size="34" font-weight="800">ERD APART-CARE</text>
+  <text x="60" y="90" font-size="15" fill="#69716e">Skema domain operasional · MySQL 8 · relasi 3NF</text>
+
+  <g transform="translate(60 140)"><rect class="box" width="250" height="130" rx="10"/><text class="head" x="18" y="32">BUILDINGS</text><text class="field" x="18" y="58">PK id · UK code</text><text class="field" x="18" y="80">name · address</text><text class="field" x="18" y="102">is_active</text></g>
+  <g transform="translate(360 140)"><rect class="box" width="250" height="145" rx="10"/><text class="head" x="18" y="32">TOWERS</text><text class="field" x="18" y="58">PK id · FK building_id</text><text class="field" x="18" y="80">code · name</text><text class="field" x="18" y="102">total_floors · is_active</text></g>
+  <g transform="translate(660 120)"><rect class="core" width="280" height="190" rx="10"/><text class="head" x="18" y="32">QR_LOCATIONS</text><text class="field" x="18" y="58">PK id · FK tower_id</text><text class="field" x="18" y="80">UK uuid · UK code</text><text class="field" x="18" y="102">name · type · tower · floor</text><text class="field" x="18" y="124">zone · description</text><text class="field" x="18" y="146">reference_image_path</text><text class="field" x="18" y="168">installation_notes · is_active</text></g>
+  <g transform="translate(1010 120)"><rect class="box" width="250" height="175" rx="10"/><text class="head" x="18" y="32">USERS</text><text class="field" x="18" y="58">PK id · UK email</text><text class="field" x="18" y="80">name · password</text><text class="field" x="18" y="102">role · phone_number</text><text class="field" x="18" y="124">is_active</text></g>
+  <g transform="translate(1310 140)"><rect class="box" width="230" height="140" rx="10"/><text class="head" x="18" y="32">SLA_POLICIES</text><text class="field" x="18" y="58">UK priority_level</text><text class="field" x="18" y="80">response_minutes</text><text class="field" x="18" y="102">resolution_minutes</text></g>
+
+  <g transform="translate(90 410)"><rect class="box" width="250" height="155" rx="10"/><text class="head" x="18" y="32">UNITS</text><text class="field" x="18" y="58">PK id · FK tenant_user_id</text><text class="field" x="18" y="80">tower · floor · unit_code</text><text class="field" x="18" y="102">occupancy_status</text><text class="field" x="18" y="124">qr_token</text></g>
+  <g transform="translate(90 650)"><rect class="box" width="250" height="155" rx="10"/><text class="head" x="18" y="32">FACILITIES</text><text class="field" x="18" y="58">PK id · UK facility_code</text><text class="field" x="18" y="80">name · category</text><text class="field" x="18" y="102">tower · floor</text><text class="field" x="18" y="124">qr_token</text></g>
+  <g transform="translate(485 405)"><rect class="core" width="350" height="225" rx="12"/><text class="head" x="18" y="32">TICKETS</text><text class="field" x="18" y="58">PK id · FK reporter_user_id</text><text class="field" x="18" y="80">FK unit_id · facility_id · qr_location_id</text><text class="field" x="18" y="102">UK public_token · ticket_number</text><text class="field" x="18" y="124">ticket_type · title · description</text><text class="field" x="18" y="146">priority_level · status</text><text class="field" x="18" y="168">initial_photo_path</text><text class="field" x="18" y="190">target_sla_at</text></g>
+  <g transform="translate(940 390)"><rect class="box" width="270" height="190" rx="10"/><text class="head" x="18" y="32">WORK_ORDERS</text><text class="field" x="18" y="58">FK/UK ticket_id</text><text class="field" x="18" y="80">FK tro_user_id</text><text class="field" x="18" y="102">FK technician_user_id</text><text class="field" x="18" y="124">before/after_photo_path</text><text class="field" x="18" y="146">dispatch/start/complete</text></g>
+  <g transform="translate(1270 390)"><rect class="box" width="270" height="165" rx="10"/><text class="head" x="18" y="32">SLA_LOGS</text><text class="field" x="18" y="58">FK ticket_id</text><text class="field" x="18" y="80">breach_status</text><text class="field" x="18" y="102">resolution_duration</text><text class="field" x="18" y="124">escalated_at · role</text></g>
+
+  <g transform="translate(430 760)"><rect class="box" width="250" height="150" rx="10"/><text class="head" x="18" y="32">ATTACHMENTS</text><text class="field" x="18" y="58">FK ticket_id · user_id</text><text class="field" x="18" y="80">kind · file_path</text><text class="field" x="18" y="102">mime_type · file_size</text></g>
+  <g transform="translate(720 760)"><rect class="box" width="250" height="150" rx="10"/><text class="head" x="18" y="32">STATUS_LOGS</text><text class="field" x="18" y="58">FK ticket_id · user_id</text><text class="field" x="18" y="80">from_status · to_status</text><text class="field" x="18" y="102">notes · changed_at</text></g>
+  <g transform="translate(1010 760)"><rect class="box" width="250" height="150" rx="10"/><text class="head" x="18" y="32">REVIEWS</text><text class="field" x="18" y="58">FK/UK ticket_id</text><text class="field" x="18" y="80">FK resident_user_id</text><text class="field" x="18" y="102">rating · comment · verified</text></g>
+  <g transform="translate(1300 760)"><rect class="box" width="250" height="150" rx="10"/><text class="head" x="18" y="32">NOTIFICATIONS</text><text class="field" x="18" y="58">notifiable_type · notifiable_id</text><text class="field" x="18" y="80">FK ticket_id · type</text><text class="field" x="18" y="102">data · read_at</text></g>
+
+  <path class="rel" d="M310 205H360"/><path class="rel" d="M610 215H660"/><path class="rel" d="M800 310V405"/>
+  <path class="rel" d="M340 487H485"/><path class="rel" d="M340 727H410V570H485"/>
+  <path class="rel" d="M1010 250H970V365H720V405"/><path class="rel dashed" d="M1310 220H1240V340H810V405"/>
+  <path class="rel" d="M835 475H940"/><path class="rel" d="M835 530H1240V472H1270"/>
+  <path class="rel" d="M570 630V760"/><path class="rel" d="M670 630V705H845V760"/><path class="rel" d="M760 630V680H1135V760"/><path class="rel" d="M805 630V660H1425V760"/>
+  <path class="rel" d="M1135 295V350H1075V390"/><path class="rel" d="M1260 220H1280V730H1425V760"/>
+
+  <text class="label" x="317" y="195">1:N</text><text class="label" x="617" y="205">1:N</text><text class="label" x="812" y="355">1:N</text><text class="label" x="847" y="465">1:1</text><text class="label" x="852" y="520">1:N</text>
+  <text x="60" y="1025" font-size="13" fill="#69716e">Garis putus-putus menunjukkan kebijakan yang digunakan untuk menghitung target SLA tiket.</text>
+</svg>
