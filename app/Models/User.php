@@ -21,7 +21,9 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::creating(function (User $user): void {
-            $user->public_id ??= hash('sha256', Str::uuid().'|'.random_bytes(32));
+            if (blank($user->public_id)) {
+                $user->public_id = hash('sha256', Str::uuid().'|'.random_bytes(32));
+            }
         });
     }
 

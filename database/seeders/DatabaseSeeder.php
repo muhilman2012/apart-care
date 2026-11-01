@@ -32,13 +32,19 @@ class DatabaseSeeder extends Seeder
 
         $technicianPassword = env('TECHNICIAN_PASSWORD', app()->isProduction() ? null : 'teknisi-demo-123');
         if (filled($technicianPassword)) {
-            User::updateOrCreate(['email' => env('TECHNICIAN_EMAIL', 'teknisi@apartcare.test')], [
+            $technician = User::updateOrCreate(['email' => env('TECHNICIAN_EMAIL', 'teknisi@apartcare.test')], [
                 'name' => env('TECHNICIAN_NAME', 'Teknisi Demo'),
                 'phone_number' => env('TECHNICIAN_PHONE', '081234567891'),
                 'password' => $technicianPassword,
                 'role' => 'technician',
                 'is_active' => true,
             ]);
+
+            if (blank($technician->public_id)) {
+                $technician->forceFill([
+                    'public_id' => hash('sha256', $technician->id.'|'.random_bytes(32)),
+                ])->save();
+            }
         }
 
         $building = Building::updateOrCreate(['code' => 'SH-BSD'], [
