@@ -15,12 +15,19 @@ class SecurityHardeningTest extends TestCase
 
     public function test_security_headers_are_attached_to_web_responses(): void
     {
-        $this->get(route('landing'))
+        $response = $this->get(route('landing'));
+
+        $response
             ->assertOk()
             ->assertHeader('X-Content-Type-Options', 'nosniff')
             ->assertHeader('X-Frame-Options', 'DENY')
             ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
             ->assertHeader('Content-Security-Policy');
+
+        $this->assertStringContainsString(
+            "script-src 'self' https://static.cloudflareinsights.com",
+            $response->headers->get('Content-Security-Policy'),
+        );
 
         $this->get(route('complaint.scan'))
             ->assertOk()
