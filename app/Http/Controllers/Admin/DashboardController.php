@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -11,23 +12,41 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        $query = Ticket::with(['reporter', 'qrLocation', 'unit', 'facility', 'workOrder.technician'])->latest();
-        if ($request->user()->role === 'technician') {
-            $query->whereHas('workOrder', fn ($workOrder) => $workOrder->where('technician_user_id', $request->user()->id));
-        }
-        $tickets = $query->get();
-        $total = max($tickets->count(), 1);
-        $closed = $tickets->where('status', 'closed')->count();
-        $onTime = $tickets->filter(fn ($ticket) => $ticket->status === 'closed' || $ticket->target_sla_at->isFuture())->count();
+        return view('admin.dashboard', $this->data($request));
+    }
 
-        return view('admin.dashboard', [
-            'tickets' => $tickets,
-            'stats' => [
-                'open' => $tickets->whereNotIn('status', ['closed'])->count(),
-                'emergency' => $tickets->where('priority_level', 'emergency')->where('status', '!=', 'closed')->count(),
-                'sla' => (int) round(($onTime / $total) * 100),
-                'closed' => $closed,
-            ],
+    public function feed(Request $request): JsonResponse
+    {
+        return response()->json([
+            'html' => view('admin.partials.dashboard-data', $this->data($request))->render(),
+            'updated_at' => now()->wib()->format('H.i.s').' WIB',
         ]);
+    }
+
+    private function data(Request $request): array
+    {
+        $base = Ticket::query();
+        if ($request->user()->role === 'technician') {
+            $base->whereHas('workOrder', fn ($workOrder) => $workOrder->where('technician_user_id', $request->user()->id));
+        }
+
+        $allTickets = (clone $base)->get();
+        $activeTickets = (clone $base)
+            ->with(['reporter', 'qrLocation', 'unit', 'facility', 'workOrder.technician'])
+            ->where('status', '!=', 'closed')
+            ->latest()
+            ->get();
+        $total = max($allTickets->count(), 1);
+        $onTime = $allTickets->filter(fn ($ticket) => $ticket->status === 'closed' || $ticket->target_sla_at->isFuture())->count();
+
+        return [
+            'tickets' => $activeTickets,
+            'stats' => [
+                'open' => $activeTickets->count(),
+                'emergency' => $activeTickets->where('priority_level', 'emergency')->count(),
+                'sla' => (int) round(($onTime / $total) * 100),
+                'closed' => $allTickets->where('status', 'closed')->count(),
+            ],
+        ];
     }
 }

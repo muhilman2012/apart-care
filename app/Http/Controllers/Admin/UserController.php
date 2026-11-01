@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class UserController extends Controller
@@ -60,7 +61,7 @@ class UserController extends Controller
             'phone_number' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'in:resident,tro,technician,manager'],
             'is_active' => ['required', 'boolean'],
-            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
+            'password' => [$user ? 'nullable' : 'required', 'string', Password::min(12)->letters()->numbers(), 'confirmed'],
         ]);
     }
 }

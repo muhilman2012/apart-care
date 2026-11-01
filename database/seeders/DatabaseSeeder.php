@@ -19,6 +19,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (app()->isProduction() && in_array(env('ADMIN_PASSWORD'), [null, '', 'password'], true)) {
+            throw new \RuntimeException('ADMIN_PASSWORD yang kuat wajib diisi sebelum menjalankan seeder di production.');
+        }
+
         User::updateOrCreate(['email' => env('ADMIN_EMAIL', 'admin@apartcare.test')], [
             'name' => env('ADMIN_NAME', 'System Administrator'),
             'password' => env('ADMIN_PASSWORD', 'password'),

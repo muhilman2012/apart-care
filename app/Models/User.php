@@ -27,6 +27,11 @@ class User extends Authenticatable
         return $this->hasMany(Ticket::class, 'reporter_user_id');
     }
 
+    public function assignedWorkOrders()
+    {
+        return $this->hasMany(WorkOrder::class, 'technician_user_id');
+    }
+
     /**
      * Get the attributes that should be cast.
      *

@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        'enabled' => env('WHATSAPP_ENABLED', false),
+        'url' => env('WHATSAPP_API_URL', 'http://whatsapp:3000'),
+        'token' => env('WHATSAPP_API_TOKEN'),
+    ],
+
 ];

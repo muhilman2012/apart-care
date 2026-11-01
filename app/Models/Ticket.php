@@ -3,12 +3,25 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Ticket extends Model
 {
     protected $guarded = [];
 
     protected $casts = ['target_sla_at' => 'datetime'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Ticket $ticket): void {
+            $ticket->uuid ??= (string) Str::uuid();
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     public function reporter()
     {

@@ -2,17 +2,34 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendWhatsappStatusNotification;
 use App\Models\QrLocation;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Services\TicketInternalNotifier;
+use App\Services\WhatsappNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AuthenticationAndDashboardTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_landing_page_uses_brand_assets_and_links_to_qr_scanner(): void
+    {
+        $this->get(route('landing'))
+            ->assertOk()
+            ->assertSee('Lapor kerusakan cukup')
+            ->assertSee('Scan QR sekarang')
+            ->assertSee(route('complaint.scan'), false)
+            ->assertSee('images/brand/apartcare-logo-horizontal.svg', false)
+            ->assertSee('property="og:image"', false)
+            ->assertSee('images/brand/apartcare-logo-utama.png', false)
+            ->assertDontSee('Minta demo');
+    }
 
     public function test_manager_is_sent_to_admin_dashboard(): void
     {
@@ -111,6 +128,95 @@ class AuthenticationAndDashboardTest extends TestCase
         ]);
     }
 
+    public function test_whatsapp_notification_is_logged_when_integration_is_disabled(): void
+    {
+        config(['services.whatsapp.enabled' => false]);
+        $location = QrLocation::create([
+            'code' => 'WA-TEST-01',
+            'name' => 'Lift Uji WhatsApp',
+            'type' => 'facility',
+            'tower_name' => 'Leonie',
+            'is_active' => true,
+        ]);
+        $ticket = Ticket::create([
+            'qr_location_id' => $location->id,
+            'reporter_name' => 'Pelapor WhatsApp',
+            'reporter_phone' => '081234567890',
+            'public_token' => str_repeat('w', 64),
+            'ticket_number' => 'AC-WA-TEST',
+            'ticket_type' => 'facility',
+            'title' => 'Lift',
+            'issue_description' => 'Pengujian antrean notifikasi WhatsApp.',
+            'priority_level' => 'regular',
+            'target_sla_at' => now()->addDay(),
+        ]);
+
+        (new SendWhatsappStatusNotification($ticket->id, 'created'))->handle(app(WhatsappNotifier::class));
+
+        $this->assertDatabaseHas('whatsapp_message_logs', [
+            'ticket_id' => $ticket->id,
+            'event' => 'created',
+            'status' => 'skipped',
+        ]);
+    }
+
+    public function test_admin_ticket_routes_use_uuid_instead_of_numeric_id(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $ticket = Ticket::create([
+            'reporter_name' => 'Pelapor UUID',
+            'reporter_phone' => '081234567890',
+            'public_token' => str_repeat('u', 64),
+            'ticket_number' => 'AC-UUID-TEST',
+            'ticket_type' => 'facility',
+            'title' => 'Uji alamat tiket',
+            'issue_description' => 'Memastikan alamat admin tidak mengekspos ID berurutan.',
+            'priority_level' => 'regular',
+            'status' => 'submitted',
+            'target_sla_at' => now()->addDay(),
+        ]);
+
+        $url = route('admin.tickets.show', $ticket);
+
+        $this->assertNotEmpty($ticket->uuid);
+        $this->assertStringEndsWith('/admin/tickets/'.$ticket->uuid, $url);
+        $this->assertNotSame((string) $ticket->id, basename(parse_url($url, PHP_URL_PATH)));
+        $this->actingAs($manager)->get($url)->assertOk();
+    }
+
+    public function test_whatsapp_message_uses_readable_status_and_bold_labels(): void
+    {
+        config([
+            'services.whatsapp.enabled' => true,
+            'services.whatsapp.url' => 'http://whatsapp.test',
+            'services.whatsapp.token' => 'test-token',
+        ]);
+        Http::fake(['http://whatsapp.test/send' => Http::response(['sent' => true], 200)]);
+        $ticket = Ticket::create([
+            'reporter_name' => 'Pelapor WhatsApp',
+            'reporter_phone' => '087731131703',
+            'public_token' => str_repeat('m', 64),
+            'ticket_number' => 'AC-MESSAGE-TEST',
+            'ticket_type' => 'facility',
+            'title' => 'Lift',
+            'issue_description' => 'Pengujian isi pesan WhatsApp.',
+            'priority_level' => 'high',
+            'status' => 'pending_verification',
+            'target_sla_at' => now()->addDay(),
+        ]);
+
+        app(WhatsappNotifier::class)->send($ticket, 'completed');
+
+        Http::assertSent(function ($request): bool {
+            $message = $request['message'];
+
+            return str_contains($message, '*Perbaikan sudah selesai*')
+                && str_contains($message, '*Nomor tiket:* AC-MESSAGE-TEST')
+                && str_contains($message, '*Status saat ini:* Menunggu konfirmasi Anda')
+                && ! str_contains($message, 'pending_verification');
+        });
+    }
+
     public function test_manager_can_create_a_persistent_qr_label_with_uuid(): void
     {
         $manager = User::factory()->create(['role' => 'manager']);
@@ -150,8 +256,8 @@ class AuthenticationAndDashboardTest extends TestCase
             'email' => 'teknisi@example.test',
             'phone_number' => '081234567890',
             'role' => 'technician',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
+            'password' => 'rahasia-aman-123',
+            'password_confirmation' => 'rahasia-aman-123',
             'is_active' => '1',
         ])->assertRedirect(route('admin.users.index'));
 
@@ -218,7 +324,7 @@ class AuthenticationAndDashboardTest extends TestCase
 
     public function test_assigned_technician_can_start_and_complete_work_order(): void
     {
-        Storage::fake('public');
+        Storage::fake('local');
         $manager = User::factory()->create(['role' => 'manager']);
         $technician = User::factory()->create(['role' => 'technician', 'is_active' => true]);
         $location = QrLocation::create([
@@ -267,5 +373,179 @@ class AuthenticationAndDashboardTest extends TestCase
 
         $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'closed']);
         $this->assertDatabaseHas('sla_logs', ['ticket_id' => $ticket->id, 'breach_status' => 'compliant']);
+    }
+
+    public function test_technician_has_read_only_access_to_qr_labels(): void
+    {
+        $technician = User::factory()->create(['role' => 'technician']);
+        $location = QrLocation::create([
+            'code' => 'READ-ONLY-QR',
+            'name' => 'QR Akses Teknisi',
+            'type' => 'facility',
+            'tower_name' => 'Tower A',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($technician)->get(route('admin.qr.index'))
+            ->assertOk()
+            ->assertSee('Akses lihat saja')
+            ->assertDontSee('Tambah label');
+        $this->actingAs($technician)->get(route('admin.qr.edit', $location))->assertForbidden();
+        $this->actingAs($technician)->patch(route('admin.qr.toggle', $location))->assertForbidden();
+    }
+
+    public function test_internal_notification_is_clickable_and_marked_as_read(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $technician = User::factory()->create(['role' => 'technician', 'is_active' => true]);
+        $ticket = Ticket::create([
+            'reporter_name' => 'Pelapor Notifikasi',
+            'reporter_phone' => '081200000099',
+            'public_token' => str_repeat('n', 64),
+            'ticket_number' => 'AC-NOTIF-TEST',
+            'ticket_type' => 'facility',
+            'title' => 'Uji notifikasi',
+            'issue_description' => 'Menguji notifikasi internal yang dapat dibaca.',
+            'priority_level' => 'high',
+            'status' => 'rework',
+            'target_sla_at' => now()->addHours(8),
+        ]);
+        $ticket->workOrder()->create([
+            'tro_user_id' => $manager->id,
+            'technician_user_id' => $technician->id,
+            'dispatched_at' => now(),
+        ]);
+
+        app(TicketInternalNotifier::class)->send($ticket, 'rework', $manager);
+        $notification = $technician->unreadNotifications()->firstOrFail();
+
+        $this->actingAs($technician)->getJson(route('admin.notifications.index'))
+            ->assertOk()
+            ->assertJsonPath('count', 1)
+            ->assertJsonPath('notifications.0.ticket_number', 'AC-NOTIF-TEST');
+        $this->actingAs($technician)->postJson(route('admin.notifications.read', $notification->id))
+            ->assertOk()
+            ->assertJsonPath('url', route('admin.tickets.show', $ticket));
+
+        $this->assertNotNull($notification->fresh()->read_at);
+    }
+
+    public function test_dashboard_realtime_feed_excludes_closed_tickets(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        foreach (['submitted' => 'AC-ACTIVE-DASH', 'closed' => 'AC-CLOSED-DASH'] as $status => $number) {
+            Ticket::create([
+                'reporter_name' => 'Pelapor Dashboard',
+                'reporter_phone' => '081200000088',
+                'public_token' => str_repeat($status === 'closed' ? 'c' : 'd', 64),
+                'ticket_number' => $number,
+                'ticket_type' => 'facility',
+                'title' => 'Uji Dashboard',
+                'issue_description' => 'Memastikan dashboard hanya menampilkan tiket aktif.',
+                'priority_level' => 'regular',
+                'status' => $status,
+                'target_sla_at' => now()->addDay(),
+            ]);
+        }
+
+        $this->actingAs($manager)->get(route('admin.dashboard'))
+            ->assertOk()
+            ->assertSee('Dashboard')
+            ->assertSee('AC-ACTIVE-DASH')
+            ->assertDontSee('AC-CLOSED-DASH');
+        $this->actingAs($manager)->getJson(route('admin.dashboard.feed'))
+            ->assertOk()
+            ->assertSee('AC-ACTIVE-DASH')
+            ->assertDontSee('AC-CLOSED-DASH');
+    }
+
+    public function test_busy_technician_is_blocked_for_high_priority_but_allowed_for_regular_ticket(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $technician = User::factory()->create(['role' => 'technician', 'is_active' => true]);
+        $busyTicket = Ticket::create([
+            'reporter_name' => 'Pelapor Beban', 'reporter_phone' => '081211111111',
+            'public_token' => str_repeat('b', 64), 'ticket_number' => 'AC-BUSY-001',
+            'ticket_type' => 'facility', 'title' => 'Tugas berjalan',
+            'issue_description' => 'Tiket aktif yang sedang ditangani teknisi.',
+            'priority_level' => 'regular', 'status' => 'in_progress', 'target_sla_at' => now()->addDay(),
+        ]);
+        $busyTicket->workOrder()->create([
+            'tro_user_id' => $manager->id, 'technician_user_id' => $technician->id,
+            'dispatched_at' => now(), 'started_at' => now(),
+        ]);
+        $highTicket = Ticket::create([
+            'reporter_name' => 'Pelapor Prioritas', 'reporter_phone' => '081222222222',
+            'public_token' => str_repeat('h', 64), 'ticket_number' => 'AC-HIGH-002',
+            'ticket_type' => 'facility', 'title' => 'Gangguan prioritas tinggi',
+            'issue_description' => 'Tiket tinggi hanya untuk teknisi yang tersedia.',
+            'priority_level' => 'high', 'status' => 'submitted', 'target_sla_at' => now()->addHours(8),
+        ]);
+
+        $this->actingAs($manager)->get(route('admin.tickets.show', $highTicket))
+            ->assertOk()
+            ->assertSee('1 tiket aktif · tidak tersedia');
+        $this->actingAs($manager)->post(route('admin.tickets.dispatch', $highTicket), [
+            'technician_user_id' => $technician->id,
+            'dispatch_notes' => 'Tangani gangguan prioritas tinggi.',
+        ])->assertSessionHasErrors('technician_user_id');
+        $this->assertDatabaseMissing('work_orders', ['ticket_id' => $highTicket->id]);
+
+        $regularTicket = Ticket::create([
+            'reporter_name' => 'Pelapor Reguler', 'reporter_phone' => '081233333333',
+            'public_token' => str_repeat('r', 64), 'ticket_number' => 'AC-REGULAR-003',
+            'ticket_type' => 'facility', 'title' => 'Perbaikan ringan',
+            'issue_description' => 'Tiket reguler boleh dikerjakan secara paralel.',
+            'priority_level' => 'regular', 'status' => 'submitted', 'target_sla_at' => now()->addDay(),
+        ]);
+        $this->actingAs($manager)->post(route('admin.tickets.dispatch', $regularTicket), [
+            'technician_user_id' => $technician->id,
+            'dispatch_notes' => 'Kerjakan setelah pemeriksaan tugas utama.',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('work_orders', [
+            'ticket_id' => $regularTicket->id,
+            'technician_user_id' => $technician->id,
+        ]);
+    }
+
+    public function test_manager_can_reassign_an_in_progress_ticket_to_available_technician(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $previous = User::factory()->create(['role' => 'technician', 'is_active' => true]);
+        $replacement = User::factory()->create(['role' => 'technician', 'is_active' => true]);
+        $ticket = Ticket::create([
+            'reporter_name' => 'Pelapor Pergantian', 'reporter_phone' => '081244444444',
+            'public_token' => str_repeat('g', 64), 'ticket_number' => 'AC-REASSIGN-001',
+            'ticket_type' => 'facility', 'title' => 'Teknisi tidak tersedia',
+            'issue_description' => 'Pekerjaan perlu dialihkan kepada teknisi pengganti.',
+            'priority_level' => 'high', 'status' => 'in_progress', 'target_sla_at' => now()->addHours(8),
+        ]);
+        $ticket->workOrder()->create([
+            'tro_user_id' => $manager->id,
+            'technician_user_id' => $previous->id,
+            'before_photo_path' => 'work-orders/before/old.jpg',
+            'dispatched_at' => now()->subHour(),
+            'started_at' => now()->subMinutes(30),
+        ]);
+
+        $this->actingAs($manager)->post(route('admin.tickets.reassign', $ticket), [
+            'technician_user_id' => $replacement->id,
+            'reassignment_reason' => 'Teknisi awal sedang cuti dan tidak dapat melanjutkan pekerjaan.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'verified']);
+        $this->assertDatabaseHas('work_orders', [
+            'ticket_id' => $ticket->id,
+            'technician_user_id' => $replacement->id,
+            'started_at' => null,
+            'before_photo_path' => null,
+        ]);
+        $this->assertDatabaseHas('ticket_status_logs', [
+            'ticket_id' => $ticket->id,
+            'from_status' => 'in_progress',
+            'to_status' => 'verified',
+        ]);
+        $this->assertSame(1, $previous->unreadNotifications()->count());
+        $this->assertSame(1, $replacement->unreadNotifications()->count());
     }
 }

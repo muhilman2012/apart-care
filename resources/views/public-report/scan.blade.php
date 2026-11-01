@@ -1,15 +1,16 @@
 @extends('layouts.public-mobile')
 @section('title', 'Pindai QR — Apart Care')
+@section('body-class', 'scanner-page')
 @section('content')
 <div class="mobile-content scan-content">
+    <a class="scan-brand" href="{{ route('landing') }}" aria-label="Kembali ke beranda APART-CARE"><img src="{{ asset('images/brand/apartcare-logo-horizontal-putih.svg') }}" alt="APART-CARE"></a>
     <section class="scan-intro">
-        <span class="eyebrow">Pengaduan tanpa login</span>
-        <h1>Pindai label di lokasi masalah.</h1>
-        <p class="lead">Izinkan kamera, lalu arahkan ke QR Apart Care. Lokasi dan fasilitas akan terisi otomatis.</p>
+        <h1>Arahkan kamera ke QR</h1>
+        <p class="lead">Pindai kode QR yang terpasang pada fasilitas. Sistem akan mengenali lokasi dan aset secara otomatis.</p>
     </section>
 
     <section class="scanner-card" aria-labelledby="scanner-title">
-        <div class="scanner-head"><div><span class="section-kicker">Opsi utama</span><h2 id="scanner-title">Gunakan kamera</h2></div><span class="live-dot">Siap</span></div>
+        <div class="scanner-head"><h2 id="scanner-title">Pemindai QR</h2><span class="live-dot">Siap</span></div>
         <div id="qr-reader" class="qr-reader" aria-live="polite">
             <div class="scan-placeholder"><div class="scan-frame" aria-hidden="true"><div class="qr-glyph">▦</div></div><p>Kamera belum dinyalakan</p></div>
         </div>
@@ -20,7 +21,7 @@
     <div class="divider"><span>atau</span></div>
 
     <section class="manual-card">
-        <span class="section-kicker">Kamera tidak tersedia?</span>
+        <span class="section-kicker">Alternatif pemindaian</span>
         <h2>Masukkan kode label</h2>
         <p>Kode tercetak di bawah QR, misalnya <strong>LEO-LIFT-A</strong>.</p>
         <form method="post" action="{{ route('complaint.code') }}">@csrf
@@ -30,8 +31,6 @@
         </form>
     </section>
 
-    <div class="steps"><div class="step"><b>1</b>Pindai / ketik kode</div><div class="step"><b>2</b>Isi kondisi</div><div class="step"><b>3</b>Kirim laporan</div></div>
-    <a class="admin-link" href="{{ route('login') }}">Portal pengelola →</a>
 </div>
 @endsection
 @push('scripts')

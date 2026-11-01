@@ -1,9 +1,9 @@
 @extends('layouts.app')
 @section('title', 'Label QR — Apart Care')
 @section('content')
-<header class="page-head"><div><span class="eyebrow">Identitas lokasi tersimpan</span><h1>Label QR</h1><p class="muted">Setiap kartu memuat lokasi, kode manual, UUID, dan QR yang siap dicetak.</p></div><div class="head-actions"><button class="button" type="button" onclick="window.print()">Cetak semua</button><a class="button button-primary" href="{{ route('admin.qr.create') }}">＋ Tambah label</a></div></header>
+<header class="page-head"><div><span class="eyebrow">Identitas lokasi tersimpan</span><h1>Label QR</h1><p class="muted">Setiap kartu memuat lokasi, kode manual, UUID, dan QR yang siap dicetak.</p></div><div class="head-actions"><button class="button" type="button" data-print-page>Cetak semua</button>@if(in_array(auth()->user()->role,['manager','tro']))<a class="button button-primary" href="{{ route('admin.qr.create') }}">＋ Tambah label</a>@endif</div></header>
 @if($locations->isEmpty())
-<section class="panel empty-state"><div class="empty-icon">▦</div><h2>Belum ada label QR</h2><p>Tambahkan unit, fasilitas, barang, atau titik lokasi pertama Anda.</p><a class="button button-primary" href="{{ route('admin.qr.create') }}">Tambah label pertama</a></section>
+<section class="panel empty-state"><div class="empty-icon">▦</div><h2>Belum ada label QR</h2><p>Belum ada unit, fasilitas, barang, atau titik lokasi yang tersimpan.</p>@if(in_array(auth()->user()->role,['manager','tro']))<a class="button button-primary" href="{{ route('admin.qr.create') }}">Tambah label pertama</a>@endif</section>
 @else
 <section class="qr-grid qr-card-grid">
 @foreach($locations as $location)
@@ -13,7 +13,7 @@
     <div class="qr-visuals">@if($location->reference_image_url)<figure><img src="{{ $location->reference_image_url }}" alt="Referensi {{ $location->name }}"><figcaption>Referensi lokasi</figcaption></figure>@endif<figure class="qr-figure"><img src="{{ route('admin.qr.svg', $location) }}" alt="QR {{ $location->name }}"><figcaption>Pindai untuk melapor</figcaption></figure></div>
     <div class="manual-code"><span>Kode manual</span><strong>{{ $location->code }}</strong></div>
     <details class="uuid-detail"><summary>Lihat UUID</summary><code>{{ $location->uuid }}</code></details>
-    <footer class="qr-card-actions"><a class="button button-small" href="{{ route('admin.qr.edit', $location) }}">Edit</a><a class="button button-small button-light" target="_blank" href="{{ route('complaint.create', $location) }}">Uji tautan</a><form method="post" action="{{ route('admin.qr.toggle', $location) }}">@csrf @method('PATCH')<button class="text-action" type="submit">{{ $location->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form></footer>
+    <footer class="qr-card-actions">@if(in_array(auth()->user()->role,['manager','tro']))<a class="button button-small" href="{{ route('admin.qr.edit', $location) }}">Edit</a>@else<span class="readonly-label">Akses lihat saja</span>@endif<a class="button button-small button-light" target="_blank" href="{{ route('complaint.create', $location) }}">Uji tautan</a>@if(in_array(auth()->user()->role,['manager','tro']))<form method="post" action="{{ route('admin.qr.toggle', $location) }}">@csrf @method('PATCH')<button class="text-action" type="submit">{{ $location->is_active ? 'Nonaktifkan' : 'Aktifkan' }}</button></form>@endif</footer>
 </article>
 @endforeach
 </section>
