@@ -10,6 +10,7 @@ use App\Services\TicketInternalNotifier;
 use App\Services\WhatsappNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -269,6 +270,42 @@ class AuthenticationAndDashboardTest extends TestCase
         ]);
     }
 
+    public function test_admin_user_routes_use_public_hash_instead_of_numeric_id(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $technician = User::factory()->create(['role' => 'technician']);
+
+        $url = route('admin.users.edit', $technician);
+
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $technician->public_id);
+        $this->assertStringEndsWith('/admin/users/'.$technician->public_id.'/edit', $url);
+        $this->assertNotSame((string) $technician->id, basename(dirname(parse_url($url, PHP_URL_PATH))));
+        $this->actingAs($manager)->get($url)->assertOk();
+        $this->actingAs($manager)->get('/admin/users/'.$technician->id.'/edit')->assertNotFound();
+    }
+
+    public function test_manager_can_explicitly_change_a_user_password(): void
+    {
+        $manager = User::factory()->create(['role' => 'manager']);
+        $technician = User::factory()->create([
+            'role' => 'technician',
+            'password' => 'password-lama-123',
+        ]);
+
+        $this->actingAs($manager)->put(route('admin.users.update', $technician), [
+            'name' => $technician->name,
+            'email' => $technician->email,
+            'phone_number' => '081234567891',
+            'role' => 'technician',
+            'is_active' => '1',
+            'change_password' => '1',
+            'password' => 'password-baru-456',
+            'password_confirmation' => 'password-baru-456',
+        ])->assertRedirect(route('admin.users.index'));
+
+        $this->assertTrue(Hash::check('password-baru-456', $technician->fresh()->password));
+    }
+
     public function test_qr_location_seeder_is_stable_and_complete(): void
     {
         $this->seed();
@@ -281,6 +318,11 @@ class AuthenticationAndDashboardTest extends TestCase
         ]);
         $this->assertDatabaseCount('sla_policies', 3);
         $this->assertDatabaseCount('towers', 5);
+        $this->assertDatabaseHas('users', [
+            'email' => 'teknisi@apartcare.test',
+            'role' => 'technician',
+            'is_active' => true,
+        ]);
     }
 
     public function test_manager_can_dispatch_a_dynamic_ticket_to_a_technician(): void

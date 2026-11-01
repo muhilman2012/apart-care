@@ -28,6 +28,7 @@ class UserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        unset($data['change_password']);
         User::create($data);
 
         return redirect()->route('admin.users.index')->with('success', 'Pengguna berhasil ditambahkan.');
@@ -41,9 +42,10 @@ class UserController extends Controller
     public function update(Request $request, User $user): RedirectResponse
     {
         $data = $this->validated($request, $user);
-        if (blank($data['password'] ?? null)) {
+        if (! $request->boolean('change_password') || blank($data['password'] ?? null)) {
             unset($data['password']);
         }
+        unset($data['change_password']);
         if ($request->user()->is($user)) {
             $data['is_active'] = true;
             $data['role'] = 'manager';
@@ -61,7 +63,14 @@ class UserController extends Controller
             'phone_number' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'in:resident,tro,technician,manager'],
             'is_active' => ['required', 'boolean'],
-            'password' => [$user ? 'nullable' : 'required', 'string', Password::min(12)->letters()->numbers(), 'confirmed'],
+            'change_password' => [$user ? 'required' : 'nullable', 'boolean'],
+            'password' => [
+                $user ? Rule::requiredIf($request->boolean('change_password')) : 'required',
+                'nullable',
+                'string',
+                Password::min(12)->letters()->numbers(),
+                'confirmed',
+            ],
         ]);
     }
 }

@@ -30,6 +30,17 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        $technicianPassword = env('TECHNICIAN_PASSWORD', app()->isProduction() ? null : 'teknisi-demo-123');
+        if (filled($technicianPassword)) {
+            User::updateOrCreate(['email' => env('TECHNICIAN_EMAIL', 'teknisi@apartcare.test')], [
+                'name' => env('TECHNICIAN_NAME', 'Teknisi Demo'),
+                'phone_number' => env('TECHNICIAN_PHONE', '081234567891'),
+                'password' => $technicianPassword,
+                'role' => 'technician',
+                'is_active' => true,
+            ]);
+        }
+
         $building = Building::updateOrCreate(['code' => 'SH-BSD'], [
             'name' => 'Sky House BSD City',
             'address' => 'Jl. BSD Raya Utama, Sampora, Cisauk, Kabupaten Tangerang, Banten',
