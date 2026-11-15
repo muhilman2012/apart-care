@@ -7,3 +7,10 @@
 @media(min-width:431px){body{padding:20px 0 0}.mobile-app{min-height:calc(100vh - 20px);border-radius:18px 18px 0 0;overflow:hidden;box-shadow:0 20px 60px rgba(17,18,23,.12)}.sticky-action{bottom:0;border-radius:0}.scanner-page .mobile-app{box-shadow:0 20px 60px rgba(0,0,0,.4)}}
 
 .scan-brand{display:block;width:158px;margin:0 auto}.scan-brand img{display:block;width:100%;height:auto}
+
+.privacy-notice{font-size:.75rem;line-height:1.55}
+.privacy-notice a,.privacy-policy a{color:var(--blue);text-underline-offset:3px}
+.privacy-policy{padding-bottom:40px;overflow-wrap:anywhere}
+.privacy-policy h1{margin:0 0 12px;font-size:1.55rem;line-height:1.25}
+.privacy-policy h2{margin:25px 0 8px;font-size:1rem;line-height:1.4}
+.privacy-policy p{margin:0 0 12px;color:var(--muted);font-size:.875rem;line-height:1.7}

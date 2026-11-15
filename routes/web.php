@@ -13,6 +13,7 @@ use App\Http\Controllers\SecureMediaController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'landing')->name('landing');
+Route::view('/privasi', 'privacy')->name('privacy');
 Route::get('/lapor', [ComplaintController::class, 'index'])->name('complaint.scan');
 Route::post('/lapor/kode', [ComplaintController::class, 'resolveCode'])->middleware('throttle:20,1')->name('complaint.code');
 Route::get('/lapor/{qrLocation:uuid}', [ComplaintController::class, 'create'])->name('complaint.create');

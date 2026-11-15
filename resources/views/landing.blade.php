@@ -95,6 +95,6 @@
     </section>
 </main>
 
-<footer class="landing-footer"><div class="landing-container"><img src="{{ asset('images/brand/apartcare-logo-horizontal-putih.svg') }}" alt="APART-CARE"><span>Scan · Lapor · Beres</span><small>Capstone Project STSI4440 · Kelompok C · Universitas Terbuka 2026</small></div></footer>
+<footer class="landing-footer"><div class="landing-container"><img src="{{ asset('images/brand/apartcare-logo-horizontal-putih.svg') }}" alt="APART-CARE"><span>Scan · Lapor · Beres</span><a href="{{ route('privacy') }}">Kebijakan Privasi</a><small>Capstone Project STSI4440 · Kelompok C · Universitas Terbuka 2026</small></div></footer>
 </body>
 </html>

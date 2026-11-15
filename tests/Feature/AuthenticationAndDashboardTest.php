@@ -26,6 +26,7 @@ class AuthenticationAndDashboardTest extends TestCase
             ->assertSee('Lapor kerusakan cukup')
             ->assertSee('Scan QR sekarang')
             ->assertSee(route('complaint.scan'), false)
+            ->assertSee(route('privacy'), false)
             ->assertSee('images/brand/apartcare-logo-horizontal.svg', false)
             ->assertSee('property="og:image"', false)
             ->assertSee('images/brand/apartcare-logo-utama.png', false)
@@ -69,7 +70,23 @@ class AuthenticationAndDashboardTest extends TestCase
         $this->get(route('complaint.create', $location))
             ->assertOk()
             ->assertSee('Lift Penumpang A')
+            ->assertSee('aria-describedby="reporter-phone-privacy"', false)
+            ->assertSee(route('privacy'), false)
             ->assertSee('tidak perlu masuk');
+    }
+
+    public function test_privacy_policy_is_public_and_explains_contact_options(): void
+    {
+        $this->get(route('privacy'))
+            ->assertOk()
+            ->assertSee('Kebijakan Privasi')
+            ->assertSee('Hubungi petugas pengelola');
+
+        config(['privacy.contact_email' => 'privasi@example.test']);
+
+        $this->get(route('privacy'))
+            ->assertOk()
+            ->assertSee('mailto:privasi@example.test', false);
     }
 
     public function test_scan_page_offers_camera_and_manual_code(): void
@@ -116,6 +133,11 @@ class AuthenticationAndDashboardTest extends TestCase
         ]);
 
         $response->assertRedirectContains('/status/');
+
+        $this->get($response->headers->get('Location'))
+            ->assertOk()
+            ->assertSee('Simpan tautan status')
+            ->assertDontSee('081234567890');
 
         $this->assertDatabaseHas('tickets', [
             'reporter_user_id' => null,

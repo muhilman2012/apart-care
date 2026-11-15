@@ -8,6 +8,24 @@
 <section class="form-block"><h2>Kategori masalah</h2><div class="choice-chips">@foreach(['Lift','Listrik','Air / pipa','Lampu','AC','Kebersihan'] as $issue)<label><input type="radio" name="title" value="{{ $issue }}" @checked(old('title', $location->type === 'facility' ? 'Lift' : '') === $issue) required><span>{{ $issue }}</span></label>@endforeach</div>@error('title')<div class="error">{{ $message }}</div>@enderror</section>
 <section class="form-block"><h2>Urgensi & target SLA</h2><div class="urgency-list"><label><input type="radio" name="priority_level" value="emergency" @checked(old('priority_level')==='emergency')><span><b>Darurat</b><small>Bocor besar, korsleting, orang terjebak</small></span><strong>2 jam</strong></label><label><input type="radio" name="priority_level" value="high" @checked(old('priority_level','high')==='high')><span><b>Tinggi</b><small>Mengganggu aktivitas penghuni</small></span><strong>8 jam</strong></label><label><input type="radio" name="priority_level" value="regular" @checked(old('priority_level')==='regular')><span><b>Biasa</b><small>Perlu diperbaiki, tidak mendesak</small></span><strong>24 jam</strong></label></div></section>
 <section class="form-block"><div class="field"><label for="issue_description">Keterangan</label><textarea id="issue_description" name="issue_description" required placeholder="Contoh: pintu lift tidak menutup sempurna">{{ old('issue_description') }}</textarea>@error('issue_description')<div class="error">{{ $message }}</div>@enderror</div><div class="field"><label for="initial_photo">Foto kondisi awal <span class="optional">opsional</span></label><input class="photo-input" id="initial_photo" name="initial_photo" type="file" accept="image/*" capture="environment"></div></section>
-<section class="form-block contact-block"><h2>Kontak pembaruan</h2><div class="field"><label for="reporter_name">Nama</label><input id="reporter_name" name="reporter_name" value="{{ old('reporter_name') }}" autocomplete="name" required placeholder="Nama Anda">@error('reporter_name')<div class="error">{{ $message }}</div>@enderror</div><div class="field"><label for="reporter_phone">Nomor WhatsApp</label><input id="reporter_phone" name="reporter_phone" value="{{ old('reporter_phone') }}" type="tel" inputmode="tel" autocomplete="tel" required placeholder="08xxxxxxxxxx">@error('reporter_phone')<div class="error">{{ $message }}</div>@enderror</div><input name="reporter_email" type="hidden" value="{{ old('reporter_email') }}"><p class="help">Link status akan dikirim melalui WhatsApp; Anda tidak perlu masuk atau membuat akun.</p></section>
-</div><div class="sticky-action"><button class="button" type="submit">Kirim laporan</button><p class="privacy">Data digunakan hanya untuk penanganan fasilitas.</p></div></form>
+<section class="form-block contact-block">
+    <h2>Kontak pembaruan</h2>
+    <div class="field">
+        <label for="reporter_name">Nama</label>
+        <input id="reporter_name" name="reporter_name" value="{{ old('reporter_name') }}" autocomplete="name" required placeholder="Nama Anda">
+        @error('reporter_name')<div class="error">{{ $message }}</div>@enderror
+    </div>
+    <div class="field">
+        <label for="reporter_phone">Nomor WhatsApp</label>
+        <input id="reporter_phone" name="reporter_phone" value="{{ old('reporter_phone') }}" type="tel" inputmode="tel" autocomplete="tel" aria-describedby="reporter-phone-privacy" required placeholder="08xxxxxxxxxx">
+        <p id="reporter-phone-privacy" class="help privacy-notice">
+            Nomor ini digunakan untuk menghubungi Anda terkait aduan, termasuk mengirim tautan status dan pembaruan jika notifikasi WhatsApp aktif.
+            <a href="{{ route('privacy') }}" target="_blank" rel="noopener noreferrer" aria-label="Kebijakan Privasi, dibuka di tab baru">Kebijakan Privasi</a>
+        </p>
+        @error('reporter_phone')<div class="error">{{ $message }}</div>@enderror
+    </div>
+    <input name="reporter_email" type="hidden" value="{{ old('reporter_email') }}">
+    <p class="help">Tautan status ditampilkan setelah laporan dikirim. Anda tidak perlu masuk atau membuat akun.</p>
+</section>
+</div><div class="sticky-action"><button class="button" type="submit">Kirim laporan</button></div></form>
 @endsection

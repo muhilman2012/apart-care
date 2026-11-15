@@ -5,3 +5,5 @@
 @media(max-width:600px){.landing-container,.landing-nav{width:min(100% - 30px,1200px)}.landing-nav{min-height:68px;gap:14px}.landing-logo img{width:145px}.landing-button-small{min-height:42px;padding:0 14px;font-size:.74rem}.landing-hero{background:var(--soft)}.hero-grid{min-height:0;padding:46px 0 58px;gap:48px}.hero-copy h1{font-size:2.55rem}.hero-copy>p{font-size:.96rem}.hero-actions,.hero-actions .landing-button{width:100%}.hero-trust{display:grid}.device-shell{width:286px;height:568px}.device-scan>img{margin-bottom:28px}.landing-section{padding:68px 0}.step-grid,.role-grid,.proof-grid{grid-template-columns:1fr}.step-grid li{min-height:220px}.step-grid h3{margin-top:30px}.feature-grid{gap:36px}.preview-row{grid-template-columns:1fr auto}.preview-row>b{grid-column:2}.landing-proof{padding:44px 0}.proof-grid{grid-template-columns:1fr 1fr}.cta-card-landing{padding:38px 26px}.cta-card-landing .landing-button{width:100%}.landing-footer .landing-container{align-items:flex-start;flex-direction:column}.landing-footer small{margin-left:0;line-height:1.5}}
 
 .device-browser{color:#596273}
+
+.landing-footer a{color:#c0cee9;font-size:.72rem;text-underline-offset:3px}
